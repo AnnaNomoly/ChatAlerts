@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Dalamud.Game.Chat;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
@@ -75,7 +76,7 @@ public class ChatWatcher : IDisposable
 
             ret ??= new List<Payload>(payloads.Count + 6);
 
-            CopySublist(payloads, ret!, lastCopiedPayload, payload);
+            CopySublist(payloads, ret, lastCopiedPayload, payload);
             lastCopiedPayload = payload + 1;
 
             do
@@ -112,35 +113,31 @@ public class ChatWatcher : IDisposable
         return match;
     }
 
-    private void HandleMessage(XivChatType type, ref SeString sender, ref SeString message, bool preFilter)
+    private void HandleMessage(IHandleableChatMessage message, bool preFilter)
     {
-        if (!(_watchAllChannels || _watchedChannels.Contains(type)))
+        if (!(_watchAllChannels || _watchedChannels.Contains(message.LogKind)))
             return;
 
         var soundPlayed = false;
         foreach (var alert in Alerts.Where(a => a.Enabled
                   && a.CanMatch()
                   && a.IncludeHidden == preFilter
-                  && (a.Channels.Contains(XivChatType.None) || a.Channels.Contains(type))))
+                  && (a.Channels.Contains(XivChatType.None) || a.Channels.Contains(message.LogKind))))
         {
-            var payloads   = alert.SenderAlert ? sender.Payloads : message.Payloads;
+            var payloads   = alert.SenderAlert ? message.Sender.Payloads : message.Message.Payloads;
             var alertMatch = HandleAlert(alert, payloads, out payloads);
             if (alert.SenderAlert)
-                sender = new SeString(payloads);
+                message.Sender = new SeString(payloads);
             else
-                message = new SeString(payloads);
+                message.Message = new SeString(payloads);
             if (alertMatch && !soundPlayed)
                 soundPlayed = alert.StartSound();
         }
     }
 
-    private void OnChatMessage(XivChatType type, int timestamp, ref SeString sender, ref SeString message, ref bool isHandled)
-    {
-        HandleMessage(type, ref sender, ref message, false);
-    }
+    private void OnChatMessage(IHandleableChatMessage message)
+        => HandleMessage(message, false);
 
-    private void OnCheckMessageHandled(XivChatType type, int timestamp, ref SeString sender, ref SeString message, ref bool isHandled)
-    {
-        HandleMessage(type, ref sender, ref message, true);
-    }
+    private void OnCheckMessageHandled(IHandleableChatMessage message)
+        => HandleMessage(message, true);
 }

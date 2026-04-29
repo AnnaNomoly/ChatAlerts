@@ -486,7 +486,7 @@ public class Interface : IDisposable
 
                 _changes          = alert.SoundEffect != se;
                 alert.SoundEffect = se;
-                UIGlobals.PlaySoundEffect((uint)se);
+                UIGlobals.PlayChatSoundEffect((uint)se.ToIdx());
                 alert.UpdateAudio();
             }
         }

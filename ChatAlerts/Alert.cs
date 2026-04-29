@@ -7,10 +7,10 @@ namespace ChatAlerts
 {
     public class Alert : IDisposable
     {
-        public List<XivChatType> Channels  = new();
-        public string            Name      = "New Alert";
-        public string            Content   = string.Empty;
-        public string            SoundPath = string.Empty;
+        public readonly List<XivChatType> Channels  = [];
+        public          string            Name      = "New Alert";
+        public          string            Content   = string.Empty;
+        public          string            SoundPath = string.Empty;
 
         public float  Volume              = 0.5f;
         public ushort HighlightForeground = 500;
@@ -38,7 +38,7 @@ namespace ChatAlerts
             if (CustomSound)
                 return _cache.PlaySound();
 
-            UIGlobals.PlaySoundEffect((uint)SoundEffect);
+            UIGlobals.PlayChatSoundEffect((uint)SoundEffect.ToIdx());
             return true;
         }
 
